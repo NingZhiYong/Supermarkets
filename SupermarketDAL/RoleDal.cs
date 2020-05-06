@@ -36,13 +36,15 @@ namespace SupermarketDAL
                 string RoleName = "";
                 foreach (DataRow RoleNameItem in RoleNameLst.Rows)
                 {
-                    RoleName += RoleNameItem["RoleName"].ToString() + " ";
+                    RoleName += RoleNameItem["RoleName"].ToString() + ",";
                 };
+
                 T_Role role = new T_Role
                 {
                     RoleID = Convert.ToInt32(item["RoleID"].ToString()),
                     Name = item["Name"].ToString(),
-                    RoleName = RoleName
+                    RoleRemake = item["RoleRemake"].ToString(),
+                    RoleName = RoleName.Trim(',')
                 };
                 roleLst.Add(role);
             }

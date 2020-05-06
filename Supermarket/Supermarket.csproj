@@ -241,6 +241,7 @@
     <Content Include="Purchase\PurchaseEdit.html" />
     <Content Include="Purchase\PurchaseManager.html" />
     <Content Include="Role\RoleManager.html" />
+    <Content Include="Role\RolePermissions.html" />
     <Content Include="Shop\shopEdit.html" />
     <Content Include="Shop\shop.html" />
     <Content Include="Store\storeDetail.html" />
@@ -367,6 +368,7 @@
     <Content Include="views\user\user\userform.html" />
     <Content Include="views\user\说明.txt" />
     <Content Include="Web.config" />
+    <Content Include="数据库文件\sql.sql" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Allot\Allot.ashx.cs">

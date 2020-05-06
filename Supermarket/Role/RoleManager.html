@@ -38,7 +38,7 @@
 
                         <!--自定义栏-->
                         <script type="text/html" id="barDemo">
-                            <a class="layui-btn layui-btn-xs" lay-event="audit">权限分配管理</a>
+                            <a class="layui-btn layui-btn-xs" lay-event="audit">角色编辑</a>
                         </script>
                     </div>
                 </div>
@@ -65,6 +65,7 @@
                 }, cols: [[
                     { type: 'checkbox', unresize: true },
                     { field: 'Name', title: '角色名称' },
+                    { field: 'RoleRemake', title: '角色说明' },
                     { field: 'RoleName', title: '拥有权限' },
                     { fixed: 'right', title: '操作', toolbar: '#barDemo', width: 140 }
                 ]]
@@ -75,9 +76,9 @@
                 if (obj.event === 'audit') {  //删除
                     layer.open({
                         type: 2
-                        , title: '采购订单详情'
-                        , content: 'PurchaseEdit.html?PurID=' + data.PurID
-                        , area: ['1000px', '600px']
+                        , title: '角色信息编辑'
+                        , content: '' + data.PurID
+                        , area: ['600px', '400px']
                     })
                 }
             })
