@@ -22,7 +22,17 @@ namespace Supermarket.Role
                 case "RoleSelect":
                     this.RoleSelect();
                     break;
+                case "RoleTreeUpdate":
+                    this.RoleTreeUpdate();
+                    break;
             }
+        }
+
+        private void RoleTreeUpdate()
+        {
+            JavaScriptSerializer Serializer = new JavaScriptSerializer();
+            var checkedData = HttpContext.Current.Request.Form["checkedData"];
+            List<RoleList> roleList = Serializer.Deserialize<List<RoleList>>(checkedData);
         }
 
         /// <summary>

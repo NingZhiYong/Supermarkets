@@ -9,8 +9,71 @@
     <link href="../layuiadmin/layui/css/layui.css" rel="stylesheet" />
 </head>
 <body>
+    <div id="test12" class="demo-tree-more"></div>
+    <div class="layui-form-item" style="margin-left:25%">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="formDemo" id="btn-tree">提交</button>
+        </div>
+    </div>
 
     <script src="../layuiadmin/layui/layui.js"></script>
     <script src="../js/jquery.min.js"></script>
+    <script>
+        layui.use(['tree', 'util'], function () {
+            var tree = layui.tree
+                , layer = layui.layer
+                , data = [
+                    {
+                        title: '系统管理',
+                        id: 'Sys_001',
+                        children: [{
+                            title: '用户管理',
+                            id: 'Sys_001_01',
+                        }, {
+                            title: '角色管理',
+                            id: 'Sys_001_02'
+                        }]
+                    }, {
+                        title: '入库管理',
+                        id: 'Sys_002',
+                        children: [{
+                            title: '仓库管理',
+                            id: 'Sys_002_01',
+                        }, {
+                            title: '采购管理',
+                            id: 'Sys_002_02'
+                        }]
+                    }
+                ];
+
+            tree.render({
+                elem: '#test12'
+                , data: data
+                , showCheckbox: true  //是否显示复选框
+                , id: 'demoId1'
+                , isJump: true //是否允许点击节点时弹出新窗口跳转
+                , click: function (obj) {
+                    var data = obj.data;  //获取当前点击的节点数据
+                    layer.msg('状态：' + obj.state + '<br>节点数据：' + JSON.stringify(data));
+                }
+            });
+
+            $("#btn-tree").click(function () {
+                var checkedData = tree.getChecked('demoId1'); //获取选中节点的数据
+                //layer.alert(JSON.stringify(checkedData), { shade: 0 });
+                console.log(checkedData);
+
+                $.ajax({
+                    url: "role.ashx?act=RoleTreeUpdate",
+                    data: { "checkedData": JSON.stringify(checkedData) },
+                    dataType: "json",
+                    type: "post",
+                    success: function () {
+
+                    }
+                })
+            })
+        })
+    </script>
 </body>
 </html>

@@ -38,7 +38,8 @@
 
                         <!--自定义栏-->
                         <script type="text/html" id="barDemo">
-                            <a class="layui-btn layui-btn-xs" lay-event="audit">角色编辑</a>
+                            <a class="layui-btn layui-btn-xs" lay-event="RoleAudit">角色信息管理</a>
+                            <a class="layui-btn layui-btn-xs" lay-event="RolePermissionsAudit">角色权限管理</a>
                         </script>
                     </div>
                 </div>
@@ -64,22 +65,24 @@
                     };
                 }, cols: [[
                     { type: 'checkbox', unresize: true },
-                    { field: 'Name', title: '角色名称' },
-                    { field: 'RoleRemake', title: '角色说明' },
+                    { field: 'Name', title: '角色名称', width: 200 },
+                    { field: 'RoleRemake', title: '角色说明', width: 240 },
                     { field: 'RoleName', title: '拥有权限' },
-                    { fixed: 'right', title: '操作', toolbar: '#barDemo', width: 140 }
+                    { fixed: 'right', title: '操作', toolbar: '#barDemo', width: 210 }
                 ]]
             });
 
             table.on('tool(test)', function (obj) {
                 var data = obj.data;
-                if (obj.event === 'audit') {  //删除
+                if (obj.event === 'RolePermissionsAudit') {  //角色权限
                     layer.open({
                         type: 2
-                        , title: '角色信息编辑'
-                        , content: '' + data.PurID
-                        , area: ['600px', '400px']
+                        , title: '角色权限编辑'
+                        , content: 'RolePermissions.html?=' + data.RoleID
+                        , area: ['500px', '400px']
                     })
+                } else if (obj.event === 'RoleAudit') {
+
                 }
             })
         })
