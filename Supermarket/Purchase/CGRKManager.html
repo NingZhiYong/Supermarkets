@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="../layuiadmin/layui/css/layui.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-header">采购入库管理</div>
+                    <div class="layui-card-body">
+                        <div class="test-table-reload-btn" style="margin-bottom: 10px;">
+                            采购订单编号：
+                            <div class="layui-inline">
+                                <input class="layui-input" name="id" id="demoReload" autocomplete="off">
+                            </div>
+                            <button type="button" class="layui-btn" id="btn-se">
+                                <i class="layui-icon">&#xe615;</i>
+                            </button>
+                        </div>
+
+                        <!--数据表格-->
+                        <table class="layui-hide" id="test" lay-filter="test"></table>
+
+                        <!--自定义栏-->
+                        <script type="text/html" id="barDemo">
+                            <a class="layui-btn layui-btn-xs" lay-event="audit">入库审核</a>
+                            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="beStore">入库</a>
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script>
+        layui.use('table', function () {
+            var table = layui.table;
+            table.render({
+                elem: '#test'
+                , url: 'purchase.ashx?act=purchaseSelect'
+                , page: true
+                , parseData: function (res) { //匹配layui table数据格式
+                    return {
+                        "code": 0,
+                        "msg": "",
+                        "count": res.status, //商品总数 用于分页
+                        "data": res.lst //数据列表
+                    };
+                }, cols: [[
+                    { type: 'checkbox', fixed: 'left', unresize: true },
+                    { field: 'PurID', title: '订单号' },
+                    {
+                        field: 'PurTime', title: '订单时间', sort: true, templet: '<div>{{ FormDate(d.PurTime, "yyyy-MM-dd HH:mm:ss") }}</div>'
+                    },
+                    { field: 'Employee', title: '采购人', templet: '<div>{{d.Employee.Name}}</div>' },
+                    {
+                        field: 'PurStart', title: '订单状态', templet: function (d) {
+                            if (d.PurStart == 0) {
+                                return '待审核'
+                            }
+                            else if (d.PurStart == 1) {
+                                return '已审核,待入库'
+                            }
+                            else if (d.PurStart == 2) {
+                                return '已入库'
+                            }
+                            else if (d.PurStart == -1) {
+                                return '不通过'
+                            }
+                        }
+                    },
+                    { fixed: 'right', title: '操作', toolbar: '#barDemo', width: 140 }
+                ]]
+            });
+
+            $('#btn-se').click(function () {
+                var demoReload = $('#demoReload').val();
+                //刷新table数据 用于搜索
+                table.reload('test', {
+                    url: 'purchase.ashx?act=purchaseSelect',
+                    where: { PurID: demoReload } //设定异步数据接口的额外参数
+                });
+            })
+
+            table.on('tool(test)', function (obj) {
+                var data = obj.data;
+                //采购订单无数据 无法审核 入库
+
+                $.ajax({
+                    url: "purchase.ashx?act=PurchaseDetailedCount",
+                    data: { "PurID": data.PurID},
+                    dataType: "json",
+                    success: function (rs) {
+                        if (obj.event === 'beStore') {  //入库
+                            //判断是否已审核
+                            if (data.PurStart == 1) {
+                                $.ajax({
+                                    url: "purchase.ashx?act=CgrkUpdate",
+                                    dataType: "json",
+                                    data: { "PurID": data.PurID },
+                                    success: function (cgrk) {
+                                        layer.msg(cgrk.msg, {
+                                            time: 1500,//显示的时间为3秒
+                                            end: function () {
+                                                window.location.reload();
+                                            }
+                                        });
+                                    }
+                                })
+                            } else if (data.PurStart == 0) {
+                                layer.msg("请先审核");
+                            } else if (data.PurStart == -1 || data.PurStart==2) {
+                                layer.msg("无法操作");
+                            }
+                        } else if (obj.event === 'audit') {  //入库审核
+                            layer.open({
+                                type: 2
+                                , title: '采购订单审核'
+                                , content: 'CGSH.html?=' + data.PurID + '=' + data.PurStart+'='+rs
+                                , area: ['1000px', '600px']
+                            })
+                        }
+                    }
+                })
+
+
+            });
+        })
+
+        function FormDate(str, fmt) {
+            //str: 日期字符串；fmt:格式类型
+            if (str == null || str == '') {
+                return "";
+            }
+            var date = eval('new ' + str.substr(1, str.length - 2)); //截取字符串之后：Date(1572490889017)
+            var o = {
+                "M+": date.getMonth() + 1, //月份
+                "d+": date.getDate(), //日
+                "H+": date.getHours(), //小时
+                "m+": date.getMinutes(), //分
+                "s+": date.getSeconds(), //秒
+                "q+": Math.floor((date.getMonth() + 3) / 3), //季度
+                "S": date.getMilliseconds() //毫秒
+            };
+            if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+                if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        }
+    </script>
+</body>
+</html>

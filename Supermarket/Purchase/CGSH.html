@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="../layuiadmin/layui/css/layui.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-body">
+                        <div class="test-table-reload-btn" style="margin-bottom: 10px;">
+                            <label>当前仓库：</label>
+                            <div class="layui-inline">
+                                <input class="layui-input" readonly="readonly" name="PurID" id="PurID" autocomplete="off">
+                            </div>
+                            审核：
+                            <div class="layui-btn-group">
+                                <button type="button" class="layui-btn" id="btn-se-yes">
+                                    <i class="layui-icon">&#xe605;</i>
+                                </button>
+                                <button type="button" class="layui-btn" id="btn-se-no">
+                                    <i class="layui-icon">&#x1006;</i>
+                                </button>
+                            </div>
+                            
+                        </div>
+                        <!--数据表格-->
+                        <table class="layui-hide" id="test" lay-filter="test"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script>
+        $(function () {
+            var para = window.location.search;
+            var dy = para.split('=');
+            var purId = dy[1];
+            var purStart = dy[2];
+            var count = dy[3];
+            $("#PurID").val(purId);
+
+            //不通过 已审核 已入库 无法操作
+            if (purStart != 0 || count==0) {
+                $("#btn-se-yes").attr("disabled", "disabled");
+                $("#btn-se-yes").addClass("layui-btn-disabled");
+                $("#btn-se-no").attr("disabled", "disabled");
+                $("#btn-se-no").addClass("layui-btn-disabled");
+            }
+
+            layui.use('table', function () {
+                var table = layui.table;
+                layer.msg("无数据、不通过、已审核、已入库无法在进行入库审核操作");
+
+                table.render({
+                    elem: '#test'
+                    , url: 'purchase.ashx?act=PurchaseEdit'
+                    , where: { "purId": purId }
+                    , page: true
+                    , parseData: function (res) { //匹配layui table数据格式
+                        return {
+                            "code": 0,
+                            "msg": "",
+                            "count": res.status, //商品总数 用于分页
+                            "data": res.lst //数据列表
+                        };
+                    }
+                    , cols: [[
+                        { type: 'checkbox', fixed: 'left' },
+                        { field: 'Shop', title: '商品名称', templet: '<div>{{d.Shop.Name}}</div>' },
+                        { field: 'Shop', title: '供应商', templet: '<div>{{d.Shop.Supplier.SupplierName}}</div>' },
+                        { field: 'PurNumber', title: '采购数量' },
+                        { field: 'Shop', title: '商品进价', templet: '<div>{{d.Shop.CostPrice}}</div>' },
+                        { field: 'Shop', title: '商品售价', templet: '<div>{{d.Shop.SalePrice}}</div>' },
+                        { field: 'Shop', title: '保质期', templet: '<div>{{d.Shop.ShelfLife}}</div>' },
+                        { field: 'Shop', title: '商品类型', templet: '<div>{{d.Shop.ShopType.Name}}</div>' },
+                        { field: 'Store', title: '入仓名称', templet: '<div>{{d.Store.Name}}</div>' }
+                    ]]
+                })
+
+                $('#btn-se-yes').click(function () {
+                    $.ajax({
+                        url: "purchase.ashx?act=PurStartUpdate",
+                        dataType: "json",
+                        data: { "PurStart": 1,"PurId": purId },
+                        success: function (rs) {
+                            if (rs.status == "yes") {
+                                var index = parent.layer.getFrameIndex(window.name);
+                                parent.layer.close(index);
+                                window.parent.location.reload();
+                            }
+                            else {
+                                layer.msg('审核出错');
+                            }
+                        }
+                    })
+                })
+
+                $('#btn-se-no').click(function () {
+                    $.ajax({
+                        url: "purchase.ashx?act=PurStartUpdate",
+                        dataType: "json",
+                        type: "get",
+                        data: { "PurStart": -1, "PurId": purId},
+                        success: function (rs) {
+                            if (rs.status == "yes") {
+                                var index = parent.layer.getFrameIndex(window.name);
+                                parent.layer.close(index);
+                                window.parent.location.reload();
+                            }
+                            else {
+                                layer.msg('审核出错');
+                            }
+                        }
+                    })
+                })
+            })
+        })
+    </script>
+</body>
+</html>

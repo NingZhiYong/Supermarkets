@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <link href="../css/layui.css" rel="stylesheet" />
+</head>
+<body>
+    <form class="layui-form" action="">
+        <div class="layui-form-item">
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">供应商名称</label>
+            <div class="layui-input-inline">
+                <input type="text" name="SupplierName" id="SupplierName" required lay-verify="required" placeholder="请输入供应商名称" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">联系人</label>
+            <div class="layui-input-inline">
+                <input type="text" name="LinkMan" id="LinkMan" required lay-verify="required" placeholder="请输入联系人名称" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">联系电话</label>
+            <div class="layui-input-inline">
+                <input type="text" name="Mobile" id="Mobile" required lay-verify="required" placeholder="请输入供应商联系电话" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">供应商地址</label>
+            <div class="layui-input-inline">
+                <input type="text" name="Address" id="Address" required lay-verify="required" placeholder="请输入供应商地址" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">供应商状态</label>
+            <div class="layui-input-block">
+                <input type="radio" name="Status" value="1" title="正常" checked="">
+                <input type="radio" name="Status" value="2" title="停用">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="formDemo">提交</button>
+            </div>
+        </div>
+    </form>
+
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <script src="../js/jquery.min.js"></script>
+
+    <script>
+        $(function () {
+            var para = window.location.search;
+            var SupplierId = para.substr(para.indexOf('=') + 1, para.length); //编辑商品Id
+            var status = "SupplierAdd";
+
+            layui.use('form', function () {
+                var form = layui.form;
+
+                if (SupplierId > 0) {
+                    //编辑查询赋值
+                    status = "SupplierEdit";
+
+                    $.ajax({
+                        url: "supplier.ashx?act=SupplierEditSelect",
+                        dataType: "json",
+                        data: { "supplierId": SupplierId },
+                        success: function (rs) {
+                            $("#SupplierName").val(rs.SupplierName);
+                            $("#LinkMan").val(rs.LinkMan);
+                            $("#Mobile").val(rs.Mobile);
+                            $("#Address").val(rs.Address);
+                            $("input[name=Status][value=1]").attr("checked", rs.Status == 1 ? true : false);
+                            $("input[name=Status][value=2]").attr("checked", rs.Status == 2 ? true : false);
+                        }
+                    })
+                }
+
+                //验证表单
+                form.on('submit(formDemo)', function () {
+                    var oData = {};
+                    oData["SupplierId"] = SupplierId;
+                    oData["SupplierName"] = $("#SupplierName").val();
+                    oData["LinkMan"] = $("#LinkMan").val();
+                    oData["Mobile"] = $("#Mobile").val();
+                    oData["Address"] = $("#Address").val();
+                    oData["Status"] = $('input[name="Status"]:checked').val();
+                    $.ajax({
+                        url: "supplier.ashx?act=" + status,
+                        dataType: "json",
+                        type: "post",
+                        data: $.param(oData),
+                        success: function (rs) {
+                            if (rs.msg == "yes") {
+                                var index = parent.layer.getFrameIndex(window.name);
+                                parent.layer.close(index);
+                                window.parent.location.reload();
+                            }
+                        }, error: function (error) {
+                            console.log(error);
+                        }
+                    })
+                });
+
+            });
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="../layuiadmin/layui/css/layui.css" rel="stylesheet" />
+    <link href="../layuiadmin/style/admin.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-header">用户管理</div>
+                    <div class="layui-card-body">
+                        <div class="test-table-reload-btn" style="margin-bottom: 10px;">
+                            <button type="button" class="layui-btn" id="btn-add">
+                                <i class="layui-icon">&#xe608;</i>
+                            </button>
+                        </div>
+
+                        <!--数据表格-->
+                        <table class="layui-hide" id="test" lay-filter="test"></table>
+
+                        <!--自定义栏-->
+                        <script type="text/html" id="barDemo">
+                            <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                        </script>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script>
+        layui.use('table', function () {
+            var table = layui.table;
+            table.render({
+                elem: '#test'
+                , url: 'employee.ashx?act=employeeSelect'
+                , page: true
+                , parseData: function (res) { //匹配layui table数据格式
+                    return {
+                        "code": 0,
+                        "msg": "",
+                        "count": res.status, //商品总数 用于分页
+                        "data": res.lst //数据列表
+                    };
+                }
+                , cols: [[
+                    { type: 'checkbox', fixed: 'left', unresize: true },
+                    { field: 'Login', title: '登陆账号' },
+                    { field: 'Name', title: '用户名称' },
+                    {
+                        field: 'Sex', title: '性别', templet: function (v) {
+                            if (v.Sex == 1) {
+                                return '男';
+                            } else if (v.Sex == 2) {
+                                return '女';
+                            }
+                        }
+                    },
+                    { field: 'Telephone', title: '联系电话' },
+                    { field: 'Role', title: '所属角色', templet: '<div>{{d.Role.Name}}</div>' },
+                    { fixed: 'right', title: '操作', toolbar: '#barDemo', width: 120 }
+
+                ]]
+            })
+
+            table.on('tool(test)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'del') {
+                    layer.confirm('真的删除么', function (index) {
+                        $.ajax({
+                            url: "employee.ashx?act=employeeDel",
+                            dataType: "json",
+                            type: "post",
+                            data: {"empId":data.EmployeeID},
+                            success: function (rs) {
+                                if (rs.status == "yes") {
+                                    obj.del(); //删除对应行（tr）的DOM结构，并更新缓存
+                                    layer.close(index);
+                                }
+                                else {
+                                    layer.msg(rs.msg);
+                                }
+                            }
+                        })
+                    })
+                } else if (obj.event === 'edit') {
+                    layer.open({
+                        type: 2
+                        , title: '用户信息编辑'
+                        , content: 'EmployeeAdd.html?empId=' + data.EmployeeID
+                        , area: ['500px', '480px']
+                    })
+                }
+            })
+        })
+
+        $("#btn-add").click(function () {
+            //iframe层-父子操作
+            layer.open({
+                type: 2
+                , title: '新增用户'
+                , content: 'EmployeeAdd.html?empId=-1'
+                , area: ['500px', '480px']
+            });
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="../css/layui.css" rel="stylesheet" />
+</head>
+<body>
+    <form class="layui-form" action="">
+        <div class="layui-form-item">
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">仓库名称</label>
+            <div class="layui-input-inline">
+                <input type="text" name="Name" id="StoreName" required lay-verify="required" placeholder="请输入仓库名称" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">仓库状态</label>
+            <div class="layui-input-block">
+                <input type="radio" name="Status" value="1" title="正常" checked="">
+                <input type="radio" name="Status" value="2" title="已满">
+                <input type="radio" name="Status" value="3" title="停用">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="formDemo">提交</button>
+            </div>
+        </div>
+    </form>
+
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script>
+        $(function () {
+            var para = window.location.search;
+            var StoreId = para.substr(para.indexOf('=') + 1, para.length);
+            var status = "StoreAdd";
+
+            layui.use('form', function () {
+                var form = layui.form;
+
+                //编辑查询赋值
+                if (StoreId > 0) {
+                    status = "StoreEdit";
+
+                    $.ajax({
+                        url: "store.ashx?act=storeEditSelect",
+                        dataType: "json",
+                        data: { "StoreId": StoreId },
+                        success: function (rs) {
+                            $("#StoreName").val(rs.Name);
+                            $("input[name=Status][value=1]").attr("checked", rs.Status == 1 ? true : false);
+                            $("input[name=Status][value=2]").attr("checked", rs.Status == 2 ? true : false);
+                            $("input[name=Status][value=3]").attr("checked", rs.Status == 3 ? true : false);
+                            form.render();
+                        }
+                    })
+                }
+
+                form.on('submit(formDemo)', function () {
+                    var oData = {};
+                    oData["StoreId"] = StoreId;
+                    oData["Name"] = $("#StoreName").val();
+                    oData["Status"] = $('input[name="Status"]:checked').val();
+                    $.ajax({
+                        url: "store.ashx?act=" + status,
+                        dataType: "json",
+                        type: "post",
+                        data: $.param(oData),
+                        success: function (rs) {
+                            if (rs.status == "yes") {
+                                var index = parent.layer.getFrameIndex(window.name);
+                                parent.layer.close(index);
+                                window.parent.location.reload();
+                            } else {
+                                layer.msg(rs.msg);
+                            }
+                        }
+                    })
+                })
+            })
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="../layuiadmin/layui/css/layui.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-header">库存调拨</div>
+                    <div class="layui-card-body">
+                        <div class="test-table-reload-btn" style="margin-bottom: 10px;">
+                            商品名称：
+                            <div class="layui-inline">
+                                <input class="layui-input" name="id" id="demoReload" autocomplete="off">
+                            </div>
+                            <button type="button" class="layui-btn" id="btn-se">
+                                <i class="layui-icon">&#xe615;</i>
+                            </button>
+                            <form class="layui-form" action="" style="display:inline-block">
+                                <div class="layui-input-inline">
+                                    <select id="StoreId" lay-verify="StoreVerify">
+                                        <option value="0">请选择调拨入库仓库</option>
+                                        <optgroup label="正常" id="zc">
+                                        </optgroup>
+                                        <optgroup label="已满" id="ym">
+                                        </optgroup>
+                                        <optgroup label="停用" id="ty">
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </form>
+                            <button type="button" class="layui-btn" id="btn-db">
+                                <i class="layui-icon">&#xe623;调拨</i>
+                            </button>
+                        </div>
+
+                        <table class="layui-hide" id="test" lay-filter="test"></table>
+
+                        <!--<script type="text/html" id="barDemo">
+                            <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                        </script>-->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script>
+        $(function () {
+            CKXR();
+            layui.use('table', function () {
+                var table = layui.table;
+                table.render({
+                    elem: '#test'
+                    , url: 'Allot.ashx?act=StoreProductList'
+                    , page: true
+                    , parseData: function (res) { //匹配layui table数据格式
+                        return {
+                            "code": 0,
+                            "msg": "",
+                            "count": res.status, //商品总数 用于分页
+                            "data": res.lst //数据列表
+                        };
+                    }
+                    , cols: [[
+                        { type: 'checkbox', fixed: 'left', unresize: true },
+                        { field: 'StoreProNumber', title: '手动填写调拨数量', edit: 'text' },
+                        { field: 'Shop', title: '商品名称', templet: '<div>{{d.Shop.Name}}</div>' },
+                        { field: 'Shop', title: '商品进价', templet: '<div>{{d.Shop.CostPrice}}</div>' },
+                        { field: 'Shop', title: '商品售价', templet: '<div>{{d.Shop.SalePrice}}</div>' },
+                        { field: 'Shop', title: '保质期', templet: '<div>{{d.Shop.ShelfLife}}</div>' },
+                        { field: 'Store', title: '所属仓库', templet: '<div>{{d.Store.Name}}</div>' },
+                        {
+                            field: 'Store', title: '仓库状态', templet: function (d) {
+                                if (d.Store.Status == 1) {
+                                    return '正常'
+                                }
+                                else if (d.Store.Status == 2) {
+                                    return '已满'
+                                } else if (d.Store.Status == 3) {
+                                    return '停用'
+                                }
+                            }
+                        },
+                        { field: 'Count', title: '库存数量' },
+                    ]]
+                });
+
+                $('#btn-se').click(function () {
+                    var demoReload = $('#demoReload').val();
+                    //刷新table数据 用于搜索
+                    table.reload('test', {
+                        url: 'Allot.ashx?act=StoreProductList',
+                        where: { "ShopName": demoReload } //设定异步数据接口的额外参数
+                    });
+                })
+
+                $('#btn-db').click(function () {
+                    var StoreId = $("#StoreId").val();
+                    if (StoreId > 0) {
+                        var checkStatus = table.checkStatus('test')
+                        var checkdata = checkStatus.data; //复选框选中的数据
+
+                        var ListShopId = "";  //调拨商品Id
+                        var dbListNumber = "";  //调拨数量
+                        var ListNumber = "";//库存数量
+                        var ListStoreId = ""; //被调拨的仓库
+
+                        for (var i = 0; i < checkdata.length; i++) {
+                            if (i == 0 || i == checkdata.length) {
+                                ListShopId += checkdata[i].Shop.ShopID;
+                                dbListNumber += checkdata[i].StoreProNumber;
+                                ListNumber += checkdata[i].Count;
+                                ListStoreId += checkdata[i].Store.StoreID;
+                            } else {
+                                ListShopId += "," + checkdata[i].Shop.ShopID;
+                                dbListNumber += "," + checkdata[i].StoreProNumber;
+                                ListNumber += "," + checkdata[i].Count;
+                                ListStoreId += "," + checkdata[i].Store.StoreID;
+                            }
+                        }
+                        if (ListShopId.length > 0) {
+                            $.ajax({
+                                url: "Allot.ashx?act=StoreProductDB",
+                                type: "get",
+                                dataType: "json",
+                                data: { "ListShopId": ListShopId, "dbListNumber": dbListNumber, "ListNumber": ListNumber, "ListStoreId": ListStoreId, "StoreId": StoreId },
+                                success: function (rs) {
+                                    console.log(rs);
+                                    layer.msg(rs.msg);
+                                    //无条件重载
+                                    table.reload('test', {
+                                        url: 'Allot.ashx?act=StoreProductList'
+                                    });
+                                }
+                            })
+                        } else {
+                            layer.msg('请选择需要调拨的商品');
+                        }
+
+                    } else {
+                        layer.msg('请选择调拨入库仓库');
+                    }
+                })
+            })
+        })
+
+        //调拨仓库渲染
+        function CKXR() {
+            layui.use('form', function () {
+                $.ajax({
+                    url: "../Purchase/purchase.ashx?act=StoreSelect",
+                    dataType: "json",
+                    success: function (result) {
+                        for (var i = 0; i < result.length; i++) {
+                            if (result[i].Status == 1) {
+                                $("#zc").append(("<option value='" + result[i].StoreID + "'>" + result[i].Name + "</option>"))
+                            }
+                            else if (result[i].Status == 2) {
+                                $("#ym").append(("<option value='" + result[i].StoreID + "' disabled='disabled'>" + result[i].Name + "</option>"))
+                            } else if (result[i].Status == 3) {
+                                $("#ty").append(("<option value='" + result[i].StoreID + "' disabled='disabled'>" + result[i].Name + "</option>"))
+                            }
+                            layui.form.render('select');
+                        }
+                    }
+                })
+            })
+        }
+    </script>
+</body>
+</html>

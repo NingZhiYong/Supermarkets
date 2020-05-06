@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <link href="../css/layui.css" rel="stylesheet" />
+</head>
+<body>
+    <form class="layui-form" action="">
+        <div class="layui-form-item">
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品条形码</label>
+            <div class="layui-input-inline">
+                <input type="text" name="ShopCode" id="ShopCode" required lay-verify="required" placeholder="请输入商品条形码" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品名称</label>
+            <div class="layui-input-inline">
+                <input type="text" name="ShopName" id="ShopName" required lay-verify="required" placeholder="请输入商品名称" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">供应商</label>
+            <div class="layui-input-inline">
+                <select id="Supplier" lay-verify="supplierVerify">
+                    <option value="0"></option>
+                    <optgroup label="正常" id="zc">
+                    </optgroup>
+                    <optgroup label="停用" id="ty">
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品进价</label>
+            <div class="layui-input-inline">
+                <input type="text" name="CostPrice" id="CostPrice" required lay-verify="required|number" placeholder="请输入商品进价" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品售价</label>
+            <div class="layui-input-inline">
+                <input type="text" name="SalePrice" id="SalePrice" required lay-verify="required|number" placeholder="请输入商品售价" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">保质期</label>
+            <div class="layui-input-inline">
+                <input type="text" name="ShelfLife" id="ShelfLife" required lay-verify="required|number" placeholder="请输入商品售价" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品类型</label>
+            <div class="layui-input-inline">
+                <select id="shopType" lay-verify="shopTypeVerify">
+                    <option value="0"></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="formDemo">提交</button>
+            </div>
+        </div>
+
+    </form>
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script>
+        $(function () {
+            var para = window.location.search;
+            var shopId = para.substr(para.indexOf('=') + 1, para.length); //编辑商品Id
+            var status = "ShopAdd";
+
+            //供应商
+            SupplierSelect();
+
+            //商品类型
+            ShopTypeSelect();
+
+
+            layui.use('form', function () {
+                var form = layui.form;
+
+                if (shopId > 0) {
+                    //编辑查询赋值
+                    status = "ShopEdit";
+
+                    $.ajax({
+                        url: "shop.ashx?act=shopEditSelect",
+                        dataType: "json",
+                        data: { "shopId": shopId },
+                        success: function (rs) {
+                            $("#ShopCode").val(rs.ShopCode);
+                            $("#ShopName").val(rs.Name);
+                            $("#CostPrice").val(rs.CostPrice);
+                            $("#SalePrice").val(rs.SalePrice);
+                            $("#ShelfLife").val(rs.ShelfLife);
+
+                            $("#Supplier").val(rs.Supplier.SupplierName);
+                            $("#shopType").val(rs.ShopType.Name);
+                            layui.form.render('select');
+                        }
+                    })
+                }
+
+                //验证规则
+                form.verify({
+                    supplierVerify: function (value) {
+                        if (value == 0) {
+                            return '请选择供应商';
+                        }
+                    },
+                    shopTypeVerify: function (value) {
+                        if (value == 0) {
+                            return '请选择商品类型';
+                        }
+                    }
+                });
+
+                //验证表单
+                form.on('submit(formDemo)', function () {
+                    var oData = {};
+                    oData["shopId"] = shopId;
+                    oData["Supplier"] = $("#Supplier").val();
+                    oData["shopType"] = $("#shopType").val();
+
+                    oData["ShopCode"] = $("#ShopCode").val();
+                    oData["ShopName"] = $("#ShopName").val();
+                    oData["CostPrice"] = $("#CostPrice").val();
+                    oData["SalePrice"] = $("#SalePrice").val();
+                    oData["ShelfLife"] = $("#ShelfLife").val();
+
+                    $.ajax({
+                        url: "shop.ashx?act=" + status,
+                        dataType: "json",
+                        type: "post",
+                        data: $.param(oData),
+                        success: function (rs) {
+                            if (rs.msg == "yes") {
+                                var index = parent.layer.getFrameIndex(window.name);
+                                parent.layer.close(index);
+                                window.parent.location.reload();
+                            }
+                        }, error: function (error) {
+                            console.log(error);
+                        }
+                    })
+                });
+
+            });
+        })
+
+        function SupplierSelect() {
+            layui.use('form', function () {
+                //var form = layui.form;
+                $.ajax({
+                    url: "shop.ashx?act=SupplierSelect",
+                    dataType: "json",
+                    success: function (result) {
+                        for (var i = 0; i < result.length; i++) {
+                            if (result[i].Status == 1) {
+                                $("#zc").append(("<option value='" + result[i].SupplierID + "'>" + result[i].SupplierName + "</option>"))
+                            } else if (result[i].Status == 2) {
+                                $("#ty").append(("<option value='" + result[i].SupplierID + "' disabled='disabled'>" + result[i].SupplierName + "</option>"))
+                            }
+                            layui.form.render('select');
+                        }
+                    }
+                })
+            })
+        }
+
+        function ShopTypeSelect() {
+            layui.use('form', function () {
+                //var form = layui.form;
+                $.ajax({
+                    url: "shop.ashx?act=ShopTypeSelect",
+                    dataType: "json",
+                    success: function (result) {
+                        layui.each(result, function (index) {
+                            $("#shopType").append("<option value='" + result[index].TypeID + "'>" + result[index].Name + "</option>")
+                            layui.form.render('select');
+                        })
+                    }
+                })
+            })
+        }
+    </script>
+</body>
+</html>

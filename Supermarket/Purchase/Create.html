@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="../layuiadmin/layui/css/layui.css" rel="stylesheet" />
+    <link href="../layuiadmin/style/admin.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-body">
+                        <div class="test-table-reload-btn" style="margin-bottom: 10px;">
+                            <label>采购订单编号：</label>
+                            <div class="layui-inline">
+                                <input class="layui-input" readonly="readonly" name="PurID" id="PurID" autocomplete="off">
+                            </div>
+                            <form class="layui-form" action="" style="display:inline-block">
+                                <div class="layui-input-inline">
+                                    <select id="StoreId" lay-verify="StoreVerify">
+                                        <option value="0">请选择入库仓库</option>
+                                        <optgroup label="正常" id="zc">
+                                        </optgroup>
+                                        <optgroup label="已满" id="ym">
+                                        </optgroup>
+                                        <optgroup label="停用" id="ty">
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </form>
+                            <button type="button" class="layui-btn" id="btn-add">
+                                <i class="layui-icon">&#xe608;</i>
+                            </button>
+                        </div>
+
+                        <!--数据表格-->
+                        <table class="layui-hide" id="test" lay-filter="test"></table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../layuiadmin/layui/layui.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <script>
+            //年月日+时分秒+四位随机数生成订单编号
+        $(function () {
+            var PurID = CGDDBH();
+            Store();
+
+            $("#PurID").val(PurID);
+
+            layui.use('table', function () {
+                var table = layui.table;
+                table.render({
+                    elem: '#test'
+                    , url: 'purchase.ashx?act=CreateShopSelect'
+                    , page: true
+                    , parseData: function (res) { //匹配layui table数据格式
+                        return {
+                            "code": 0,
+                            "msg": "",
+                            "count": res.status, //商品总数 用于分页
+                            "data": res.lst //数据列表
+                        };
+                    }
+                    , cols: [[
+                        { type: 'checkbox', fixed: 'left' },
+                        { field: 'Number', title: '手动填写采购数量', edit: 'text' },
+                        { field: 'Name', title: '商品名称', width: 100 },
+                        {
+                            field: 'Supplier', title: '供应商', width: 200, templet: '<div>{{d.Supplier.SupplierName}}</div>'
+                        },
+                        { field: 'CostPrice', title: '商品进价', width: 120, sort: true },
+                        { field: 'SalePrice', title: '商品售价', width: 120, sort: true },
+                        { field: 'ShelfLife', title: '保质期' },
+                        {
+                            field: 'ShopType', title: '商品类型', templet: '<div>{{d.ShopType.Name}}</div>'
+                        }
+                    ]]
+                })
+
+                $("#btn-add").click(function () {
+                    var checkStatus = table.checkStatus('test')
+                    var checkdata = checkStatus.data;
+
+                    var StoreId = $("#StoreId").val();
+                    if (StoreId > 0) {
+                        var ListShopId = "";
+                        var ListNumber = "";
+                        for (var i = 0; i < checkdata.length; i++) {
+                            if (i == 0 || i == checkdata.length) {
+                                ListShopId += checkdata[i].ShopID;
+                                ListNumber += checkdata[i].Number;
+                            } else {
+                                ListShopId += "," + checkdata[i].ShopID;
+                                ListNumber += "," + checkdata[i].Number;
+                            }
+                        }
+                        if (ListShopId.length > 0) {
+                            $.ajax({
+                                url: "purchase.ashx?act=CreatePurchaseShop",
+                                type: "get",
+                                dataType: "json",
+                                data: { "ListShopId": ListShopId, "ListNumber": ListNumber, "PurID": PurID, "StoreID": StoreId },
+                                success: function (rs) {
+                                    if (rs.status == "status") {
+                                        layer.msg(rs.msg);
+                                    }
+                                    else {
+                                        layer.msg(rs.msg);
+                                    }
+                                }
+                            })
+                        }
+                        else {
+                            layer.msg('请选择需要采购的商品');
+                        }
+                    }
+                    else {
+                        layer.msg('请选择采购商品需要存入的仓库');
+                    }
+                })
+            })
+        })
+
+        function CGDDBH() {
+            var now = new Date();
+
+            var year = now.getFullYear();       //年
+            var month = now.getMonth() + 1;     //月
+            var day = now.getDate();            //日
+
+            var hh = now.getHours();            //时
+            var mm = now.getMinutes();          //分
+            var ss = now.getSeconds();          //分
+
+            var clock = "CG" + year;
+
+            if (month < 10)
+                clock += "0";
+
+            clock += month;
+
+            if (day < 10)
+                clock += "0";
+
+            clock += day;
+
+            if (hh < 10)
+                clock += "0";
+
+            clock += hh;
+            if (mm < 10)
+                clock += '0';
+            clock += mm;
+
+            if (ss < 10)
+                clock += '0';
+            clock += ss;
+
+            clock += Math.floor(Math.random() * 9000 + 1000);
+            return clock;
+        }
+
+        function Store() {
+            layui.use('form', function () {
+                $.ajax({
+                    url: "purchase.ashx?act=StoreSelect",
+                    dataType: "json",
+                    success: function (result) {
+                        for (var i = 0; i < result.length; i++) {
+                            if (result[i].Status == 1) {
+                                $("#zc").append(("<option value='" + result[i].StoreID + "'>" + result[i].Name + "</option>"))
+                            }
+                            else if (result[i].Status == 2) {
+                                $("#ym").append(("<option value='" + result[i].StoreID + "' disabled='disabled'>" + result[i].Name + "</option>"))
+                            } else if (result[i].Status == 3){
+                                $("#ty").append(("<option value='" + result[i].StoreID + "' disabled='disabled'>" + result[i].Name + "</option>"))
+                            }
+                            layui.form.render('select');
+                        }
+                    }
+                })
+            })
+        }
+    </script>
+</body>
+</html>
